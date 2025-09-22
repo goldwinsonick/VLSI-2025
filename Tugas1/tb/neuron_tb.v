@@ -4,8 +4,8 @@ module neuron_tb;
   parameter N = 4;
   parameter WIDTH = 8;
 
-  reg signed [WIDTH-1:0] x [N-1:0];
-  reg signed [WIDTH-1:0] w [N-1:0];
+  reg signed [N*WIDTH-1:0] x;
+  reg signed [N*WIDTH-1:0] w;
   reg signed [WIDTH-1:0] b;
   wire signed [2*WIDTH+1:0] y;
 
@@ -16,45 +16,82 @@ module neuron_tb;
     .y(y)
   );
 
-  integer i;
+  // Intermediate wires for signed display
+  wire signed [WIDTH-1:0] x0 = x[7:0];
+  wire signed [WIDTH-1:0] x1 = x[15:8];
+  wire signed [WIDTH-1:0] x2 = x[23:16];
+  wire signed [WIDTH-1:0] x3 = x[31:24];
+  wire signed [WIDTH-1:0] w0 = w[7:0];
+  wire signed [WIDTH-1:0] w1 = w[15:8];
+  wire signed [WIDTH-1:0] w2 = w[23:16];
+  wire signed [WIDTH-1:0] w3 = w[31:24];
 
   initial begin
     $dumpfile("build/neuron_tb.vcd");
     $dumpvars(0, neuron_tb);
 
-    $display("Time\t\t x0\t x1\t x2\t x3\t w0\t w1\t w2\t w3\t b\t | y");
+    $display("Time\tx0\tx1\tx2\tx3\tw0\tw1\tw2\tw3\tb\t| y");
     $monitor("%0t\t%0d\t%0d\t%0d\t%0d\t%0d\t%0d\t%0d\t%0d\t%0d\t| %0d",
-      $time, x[0], x[1], x[2], x[3], w[0], w[1], w[2], w[3], b, y);
+      $time,
+      x0, x1, x2, x3,
+      w0, w1, w2, w3,
+      b, y);
 
-    // Test 1: all zeros
-    x[0]=0; x[1]=0; x[2]=0; x[3]=0;
-    w[0]=0; w[1]=0; w[2]=0; w[3]=0;
-    b=0;
-    #10; // Expect: 0
+    // Test 1
+    // x = {0, 0, 0, 0}
+    // w = {0, 0, 0, 0}
+    // b = 0
+    // y = (0*0) + (0*0) + (0*0) + (0*0) + 0 = 0
+    // y = ReLU(0) = 0
+    x = {8'd0, 8'd0, 8'd0, 8'd0};
+    w = {8'd0, 8'd0, 8'd0, 8'd0};
+    b = 8'd0;
+    #10;
 
-    // Test 2: positive inputs and weights, positive bias
-    x[0]=1; x[1]=2; x[2]=3; x[3]=4;
-    w[0]=1; w[1]=1; w[2]=1; w[3]=1;
-    b=5;
-    #10; // Expect: 1+2+3+4+5 = 15
+    // Test 2
+    // x = {4, 3, 2, 1}
+    // w = {1, 1, 1, 1}
+    // b = 5
+    // y = (4*1) + (3*1) + (2*1) + (1*1) + 5 = 4 + 3 + 2 + 1 + 5 = 15
+    // y = ReLU(15) = 15
+    x = {8'd4, 8'd3, 8'd2, 8'd1};
+    w = {8'd1, 8'd1, 8'd1, 8'd1};
+    b = 8'd5;
+    #10;
 
-    // Test 3: negative weights, negative bias
-    x[0]=2; x[1]=2; x[2]=2; x[3]=2;
-    w[0]=-1; w[1]=-1; w[2]=-1; w[3]=-1;
-    b=-1;
-    #10; // Expect: -2-2-2-2-1 = -9 -> ReLU = 0
+    // Test 3
+    // x = {2, 2, 2, 2}
+    // w = {-1, -1, -1, -1}
+    // b = -1
+    // y = (2*-1) + (2*-1) + (2*-1) + (2*-1) + (-1) = -2 -2 -2 -2 -1 = -9
+    // y = ReLU(-9) = 0
+    x = {8'd2, 8'd2, 8'd2, 8'd2};
+    w = {-8'd1, -8'd1, -8'd1, -8'd1};
+    b = -8'd1;
+    #10;
 
-    // Test 4: mixed values, positive sum
-    x[0]=5; x[1]=-3; x[2]=2; x[3]=1;
-    w[0]=2; w[1]=2; w[2]=2; w[3]=2;
-    b=3;
-    #10; // Expect: 10 + (-6) + 4 + 2 + 3 = 13
+    // Test 4
+    // x = {5, -3, 2, 1}
+    // w = {2, 2, 2, 2}
+    // b = 3
+    // y = (5*2) + (-3*2) + (2*2) + (1*2) + 3 = 10 + (-6) + 4 + 2 + 3 = 13
+    // y = ReLU(13) = 13
+    x = {8'd5, -8'd3, 8'd2, 8'd1};
+    w = {8'd2, 8'd2, 8'd2, 8'd2};
+    b = 8'd3;
+    #10;
 
-    // Test 5: mixed values, negative sum
-    x[0]=-5; x[1]=3; x[2]=-2; x[3]=1;
-    w[0]=2; w[1]=-2; w[2]=2; w[3]=-2;
-    b=-3;
-    #10; // Expect: -10 + (-6) + (-4) + (-2) -3 = -25 -> ReLU = 0
+    // Test 5
+    // x = {5, -3, 2, 1}
+    // w = {2, 3, 4, 5}
+    // b = 3
+    // y = (5*2) + (-3*3) + (2*4) + (1*5) + 3 = 10 + (-9) + 8 + 5 + 3 = 17
+    // y = ReLU(17) = 17
+    x = {8'd5, -8'd3, 8'd2, 8'd1};
+    w = {8'd2, 8'd3, 8'd4, 8'd5};
+    b = 8'd3;
+    #10;
+
 
     #10 $finish;
   end
