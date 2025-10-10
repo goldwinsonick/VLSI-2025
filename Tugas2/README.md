@@ -1,10 +1,10 @@
-# Tugas 2
+# Tugas 1
 
 ## Project Structure
 ```
 Tugas1/
-├── rtl/         # Verilog source modules (neuron.v, etc.)
-├── tb/          # Testbenches for each module (neuron_tb.v, etc.)
+├── rtl/         # Verilog source modules (and32.v, or32.v, xor32.v, inv32.v, neuron.v, etc.)
+├── tb/          # Testbenches for each module (and32_tb.v, or32_tb.v, xor32_tb.v, inv32_tb.v, neuron_tb.v, etc.)
 ├── build/       # Output folder for compiled testbenches and waveform files (.vcd)
 ├── Makefile     # Automation script for build/run/wave/clean
 └── README.md    # Documentation
